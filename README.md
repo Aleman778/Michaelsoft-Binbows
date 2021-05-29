@@ -1,6 +1,6 @@
 # Michaelsoft-Binbows
-The new amazing operating system
-
+The new amazing operating system!
+![binbows](https://raw.githubusercontent.com/Aleman778/Michaelsoft-Binbows/main/banner.jpg)
 
 ## Setup Windows
 Prerequsites:
