@@ -1,13 +1,14 @@
-[org 0x7e00]
+org 0x7e00
+bits 16
 
-mov bx, EXTERNAL_PROGRAM_LOADED_SUCCESSFULLY
-call print_string
+mov si, EXTERNAL_PROGRAM_LOADED_SUCCESSFULLY
+call puts
 
 jmp $
 
-%include "print.asm"
+%include "basic.asm"
 
 EXTERNAL_PROGRAM_LOADED_SUCCESSFULLY:
-    db "Loaded the external program succesfully!", 0
+    db "Loaded the external program successfully!", ENDL, 0
 
 times 2048-($-$$) db 0

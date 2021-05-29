@@ -18,11 +18,11 @@ read_disk:
 
 report_disk_read_failed:
     mov bx, DISK_READ_ERROR_STRING
-    call print_string
+    call puts
     jmp $
 
 BOOT_DISK:
     db 0
 
 DISK_READ_ERROR_STRING:
-    db "Disk read failed!", 0
+    db "Disk read failed!", ENDL, 0
