@@ -16,9 +16,9 @@ Open up the bochs application and you will be presented by a GUI and we want
 to load the floppy image.
 In `Edit Options` naviate to `Disk & Boot` and double click it, this opens up a new
 window and is where you can specify the floppy image.
-The type of floppy drive is `5.25" 1.2M` and then select the bootloader floppy image
+The type of floppy drive is `3.5" 1.44M` and then select the bootloader floppy image
 from the `build` directory.
-Select the type of floppy media to be `1.2M` and set status to `inserted`,
+Select the type of floppy media to be `1.44M` and set status to `inserted`,
 press `OK`.
 Before running it save the settings for later, click `Save` and place the
 configuration file in your `build` directory with the name `bootloader`.
