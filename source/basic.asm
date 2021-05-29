@@ -2,8 +2,8 @@
 %define ENDL 0x0D, 0x0A
 ; 
 ; Prints null-terminated string from pointer.
-; Params:
-;     - ds:si points to null-terminated string
+; Parameters:
+;     - ds:si: points to null-terminated string
 ;
 puts:
     push si
@@ -13,7 +13,7 @@ puts:
     lodsb ; loads byte to al and increments si
     or al, al ; check if next character is null
     jz .exit
-    int 0x10
+    int 0x10 ; call bios interrupt
     jmp .loop
 .exit:
     pop ax
