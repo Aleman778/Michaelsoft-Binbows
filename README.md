@@ -21,7 +21,7 @@ from the `build` directory.
 Select the type of floppy media to be `1.44M` and set status to `inserted`,
 press `OK`.
 Before running it save the settings for later, click `Save` and place the
-configuration file in your `build` directory with the name `bootloader`.
+configuration file in your `build` directory with the default name `bochsrc`.
 Now you can `Run` the program and it can also be executed directly via that file.
 
 ## 4coder
