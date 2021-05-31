@@ -4,8 +4,8 @@ The new amazing operating system!
 
 ## Setup Windows
 Prerequsites:
-1. Download Netwide Assembler (nasm.us), make sure this is on your path
-2. Download Bochs x86 emulator (https://bochs.sourceforge.io/)
+1. Download Netwide Assembler https://nasm.us, make sure this is on your path
+2. Download Bochs x86 emulator https://bochs.sourceforge.io/
 
 ### Compile the project
 Run the `build.bat` file which will create a floppy image in the `build` directory
