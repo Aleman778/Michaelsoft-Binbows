@@ -13,14 +13,14 @@ bpb_bytes_per_sector:      dw 512
 bpb_sectors_per_cluster:   db 1
 bpb_reserved_sectors:      dw 1
 bpb_fat_count:             db 2
-bpb_dir_entries_count:     dw 0E0h
+bpb_dir_entry_count:     dw 0x0E0
 bpb_total_sectors:         dw 2880 ; 2880 * 512 = 1.44MB
-bpb_media_discriptor_type: db 0F0h ; 3.5" floppy disk
+bpb_media_discriptor_type: db 0xF0 ; 3.5" floppy disk
 bpb_sectors_per_fat:       dw 9    ; 9 sectors/fat
 bpb_sectors_per_track:     dw 18
-bpb_heads:                 dd 2
+bpb_heads:                 dw 2
 bpb_hidden_sectors:        dd 0
-pbp_large_sector_count:    dd 0
+bpb_large_sector_count:    dd 0
 
 ; extended boot record
 ebr_drive_number: db 0                  ; 0x00 floppy, 0x80 hdd
