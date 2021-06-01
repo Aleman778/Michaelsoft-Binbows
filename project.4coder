@@ -31,8 +31,13 @@ commands = {
    .win = "build\\bochsrc.bxrc",
    .linux = "build/build",
    .mac = "build/build", },
+ .debug = { .out = "*run*", .footer_panel = false, .save_dirty_files = false,
+   .win = "debug.bat",
+   .linux = "build/build",
+   .mac = "build/build", },
 };
 fkey_command = {
-.F1 = "build",
-.F2 = "run",
+ .F1 = "build",
+ .F2 = "run",
+ .F3 = "debug",
 };

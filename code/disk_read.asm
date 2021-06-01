@@ -23,7 +23,7 @@ disk_read:
 
 .retry:
     pusha           ; save all registers, we can't know what BIOS modifies
-    stc             ; set carry flag, some BIOS'es don't set it
+    stc             ; set carry flag, some BIOSes don't set it
     int 13h         ; success if carry flag is clearead
     jnc .done
 
@@ -68,11 +68,7 @@ disk_reset:
     popa
     ret
 
-;
-; Report disk read error.
-;
 disk_read_error:
-    ; after all attempts are exhausted
     mov si, msg_disk_read_failure
     call puts
     jmp wait_key_and_reboot
