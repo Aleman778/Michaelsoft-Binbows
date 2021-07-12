@@ -146,10 +146,10 @@ u16 // NOTE(alexander): read entry in FAT12, requires some bit tricks to get the
 fat_read_entry(u16 cluster) {
     u16 fat_offset = cluster + (cluster / 2);
     u32 fat_value = (*(u16*)(fat + fat_offset));
-    if (fat_value & 0x0001) {
-        cluster = fat_value >> 4;
-    } else {
+    if (cluster % 2 == 0) {
         cluster = fat_value & 0x0fff;
+    } else {
+        cluster = fat_value >> 4;
     }
     return cluster;
 }
@@ -158,10 +158,10 @@ void
 fat_write_entry(u16 cluster, u16 value) {
     u16 fat_offset = cluster + (cluster / 2);
     u32 fat_value = (*(u16*)(fat + fat_offset));
-    if (fat_value & 0x0001) {
-        *(u16*)(fat + fat_offset) = (0xFFF0 & (value << 4)) | (0x000F & fat_value);
+    if (cluster % 2 == 0) {
+        *(u16*)(fat + fat_offset) = (0x0fff & value) | (0xf000 & fat_value);
     } else {
-        *(u16*)(fat + fat_offset) = (0x0FFF & value) | (0xF000 & fat_value);
+        *(u16*)(fat + fat_offset) = (value << 4) | (0x000f & fat_value);
     }
 }
 
@@ -241,13 +241,17 @@ fat_write_file(const char* input_filepath,
             
             // Copy the file contents to the each available cluster and update the file allocation table
             u16 cluster = first_cluster;
+            u8* file_next_cluster = file.content;
             for (int index = 0; index < num_clusters; index++) {
-                if (fat_read_entry(cluster) == 0) {
-                    u32 lba = fat_cluster_to_lba(cluster);
-                    void* cluster_dst = (u8*) disk_memory + (lba * boot_sector.bytes_per_sector);
-                    memcpy(cluster_dst, file.content, boot_sector.bytes_per_sector);
-                    fat_write_entry(cluster, (index == num_clusters - 1) ? cluster + 1 : 0xFF8);
+                while (fat_read_entry(cluster) != 0) {
+                    cluster++;
                 }
+                u32 lba = fat_cluster_to_lba(cluster);
+                void* cluster_dst = (u8*) disk_memory + (lba * boot_sector.bytes_per_sector);
+                memcpy(cluster_dst, file_next_cluster, boot_sector.bytes_per_sector);
+                file_next_cluster += boot_sector.bytes_per_sector;
+                fat_write_entry(cluster, (index == num_clusters - 1) ? 0x0FFF : cluster + 1);
+                cluster++;
             }
             
             fat_write_directory_entry(entry, filename, attributes);
@@ -323,6 +327,8 @@ main(int argc, char* argv[]) {
         
         // Store the volume id
         fat_write_directory_entry(root_directory, "BINBOWSOS  ", FatAttribute_Volume_Id);
+        fat_write_entry(0, 0xFF0); // reserved cluster
+        fat_write_entry(1, 0xFFF); // last cluster
         
         // Save the kernel as a file in the FAT12 filesystem
         fat_write_file("kernel.bin", "KERNEL  BIN", FatAttribute_Archive, disk_memory, root_directory);
@@ -330,6 +336,14 @@ main(int argc, char* argv[]) {
         // Copy file allocation table for data redundancy
         void* fat2 = ((u8*) disk_memory) + (boot_sector.bytes_per_sector * (boot_sector.sectors_per_fat + 1));
         memcpy(fat2, fat, boot_sector.bytes_per_sector * boot_sector.sectors_per_fat);
+        
+        for (int i = 0; i < 10; i++) {
+            printf("%.2x  ", fat[i]);
+        }
+        printf("\n");
+        for (int i = 0; i < 10; i++) {
+            printf("%.3x ", fat_read_entry(i));
+        }
         
         // Write disk memory out to file
         FILE* disk_file = fopen(disk_path, "wb");
