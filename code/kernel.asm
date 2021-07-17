@@ -30,12 +30,12 @@ main:
 
 ;
 ; Global Descriptor Table:
-; |31                   24|23                   16|15                    8|7                     0|
-; |-----------------------|---|----|---|---|------|---|---|------|------|-------------------------|
-; | base address (24-31)  | G | DB | - | A | limit| P | D | DPL  | type | base address (16-23)    |
-; |-----------------------|---|----|---|---|------|---|---|------|------|-------------------------|
-; | base address (0-15)                           | segment limit (0-15)                          |
-; |-----------------------------------------------|-----------------------------------------------|
+; |31                    24|23                    16|15                     8|7                      0|
+; |------------------------|---|----|---|---|-------|---|-----|---|----------|------------------------|
+; | base address (24-31)   | G | DB | - | A | limit | P | DPL | S | type     | base address (16-23)   |
+; |------------------------|---|----|---|---|-------|---|-----|---|----------|------------------------|
+; | base address (0-15)                             | segment limit (0-15)                            |
+; |-------------------------------------------------|-------------------------------------------------|
 ;
 ; TODO(alexander): document each of the entries in the descriptor table here
 ;
@@ -67,7 +67,13 @@ DATA_SEGMENT equ gdt_data - gdt_start
 %include "kernel32.asm"
 
 msg_kernel_success:
-    db "Kernel was initialized successfully!", 0
+    db "Kernel was initialized successfully!", ENDL, 0
+
+msg_no_cpuid:
+    db "No support for CPUID!", ENDL, 0
+
+msg_no_long_mode:
+    db "No support for long (64-bit) mode!", ENDL, 0
 
 TEXT_DISPLAY equ 0xb8000
 buffer_display:
