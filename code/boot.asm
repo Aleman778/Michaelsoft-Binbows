@@ -129,8 +129,8 @@ main:
     add bx, di
 
     ; setup load segment
-    mov ax, KERNEL_SEGMENT
-    mov es, ax
+;    mov ax, KERNEL_SEGMENT
+;    mov es, ax
     mov bx, KERNEL_OFFSET ; current offset, don't overwrite bx
 
 .read_file_loop:
@@ -170,11 +170,10 @@ main:
 .read_file_loop_exit:
     ; execute the loaded file
     mov dl, [ebr_drive_number]
-    mov ax, KERNEL_SEGMENT
-    mov ds, ax
-    mov es, ax
- 
-    jmp KERNEL_SEGMENT:KERNEL_OFFSET
+;    mov ax, KERNEL_SEGMENT
+;    mov ds, ax
+;    mov es, ax
+    jmp KERNEL_OFFSET
 
     ; this should never be executed
     jmp wait_key_and_reboot
@@ -192,8 +191,7 @@ current_cluster:      db 0
 FIRST_CLUSTER_LBA equ 31 ; TODO(alexander): hardcoded for now
 
 ; The location of the kernel in memory
-KERNEL_SEGMENT equ 0x2000
-KERNEL_OFFSET equ 0x0
+KERNEL_OFFSET equ 0x1000
 
 times 510-($-$$) db 0
 dw 0xaa55
