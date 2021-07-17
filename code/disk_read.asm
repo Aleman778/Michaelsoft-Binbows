@@ -45,15 +45,6 @@ disk_read:
     pop ax
     ret
 
-;
-; Waits for any keypress and reboots the computer
-;
-wait_key_and_reboot:
-    mov ah, 0
-    int 16h      ; wait for keypress
-    jmp 0FFFFh:0 ; jump to beginning of BIOS, should reboot
-    hlt
-
 ; 
 ; Resets disk controller
 ; Parameters:

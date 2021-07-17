@@ -97,22 +97,15 @@ main:
     mov bx, buffer
     call disk_read
 
-    ; next buffer location
-    ; mov al, cl
-    ; xor ah, ah
-    ; xor dx, dx
-    ; mul word [bpb_bytes_per_cluster]
-    ; add bx, ax ; ax = new buffer location
-
     ; search for the kernel.bin file
     xor bx, bx
-    mov di, filename_kernel_bin
+    mov di, buffer
     
 .search_kernel:
-    mov si, buffer
+    mov si, filename_kernel_bin
     mov cx, 11
     push di
-    repe cmpsb ; NOTE(alexander): doesn't seem to work on null characters, always equals
+    repe cmpsb
     pop di
     je .found_kernel
     
@@ -123,35 +116,87 @@ main:
     jmp kernel_not_found_error
 
 .found_kernel:
-    mov si, msg_kernel_found
-    call puts
-    jmp .halt
-     
-    ; Read the kernel into memory
+    ; read the first cluster
+    mov ax, [di + 26]
+    mov [current_cluster], ax
     
-
-    ; read FAT
+    ; read file allocation table
     mov ax, [bpb_reserved_sectors]
     mov cl, [bpb_sectors_per_fat]
     mov dl, [ebr_drive_number]
+    mov bx, buffer
     call disk_read
+    add bx, di
 
-.halt:
-    cli  ; disable interrupts, make sure CPU cannot escape
-    hlt
+    ; setup load segment
+    mov ax, KERNEL_SEGMENT
+    mov es, ax
+    mov bx, KERNEL_OFFSET ; current offset, don't overwrite bx
+
+.read_file_loop:
+    ; read the current cluster
+    mov ax, [current_cluster]
+    add ax, FIRST_CLUSTER_LBA
+    mov cl, [bpb_sectors_per_cluster]
+    mov dl, [ebr_drive_number]
+    call disk_read
+    add bx, [bpb_bytes_per_sector] ; TODO(alexander): times sectors_per_cluster!
+
+    ; read FAT to find next cluster
+    mov ax, [current_cluster]    
+    mov cx, 2
+    div cx
+    add ax, [current_cluster]
+
+    mov si, buffer
+    add si, ax
+    mov ax, [ds:si]
+
+    or dx, dx
+    jz .even
+.odd:
+    shr ax, 4
+    jmp .read_next_cluster
+.even:
+    and ax, 0x0fff
+.read_next_cluster:
+    cmp ax, 0x0ff8 ; ff8 - fff means end of file
+    jge .read_file_loop_exit
+
+    ; read the next cluster
+    mov [current_cluster], ax
+    jmp .read_file_loop
+
+.read_file_loop_exit:
+    ; execute the loaded file
+    mov dl, [ebr_drive_number]
+    mov ax, KERNEL_SEGMENT
+    mov ds, ax
+    mov es, ax
+ 
+    jmp KERNEL_SEGMENT:KERNEL_OFFSET
+
+    ; this should never be executed
+    jmp wait_key_and_reboot
 
 kernel_not_found_error:
     mov si, msg_kernel_not_found
     call puts
     jmp wait_key_and_reboot
 
-msg_kernel_found:     db "Kernel is found!", ENDL, 0
 msg_kernel_not_found: db "KERNEL.BIN is not found!", ENDL, 0
 msg_loading:          db "Loading...", ENDL, 0
 filename_kernel_bin:  db "KERNEL  BIN"
-kernel_cluster:       db 0
+current_cluster:      db 0
+
+FIRST_CLUSTER_LBA equ 31 ; TODO(alexander): hardcoded for now
+
+; The location of the kernel in memory
+KERNEL_SEGMENT equ 0x2000
+KERNEL_OFFSET equ 0x0
 
 times 510-($-$$) db 0
 dw 0xaa55
 
+; Buffer space used for temporarly storing FAT and directories
 buffer:

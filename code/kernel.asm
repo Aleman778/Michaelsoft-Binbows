@@ -1,10 +1,10 @@
-org 0x7e00
 bits 16
+
 
 mov si, msg_kernel_loaded_successfully
 call puts
 
-jmp $
+jmp wait_key_and_reboot
 
 %include "basic.asm"
 

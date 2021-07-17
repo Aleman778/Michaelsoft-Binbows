@@ -255,7 +255,7 @@ fat_write_file(const char* input_filepath,
             }
             
             fat_write_directory_entry(entry, filename, attributes);
-            entry->first_cluster_low = first_cluster;
+            entry->first_cluster_low = first_cluster + 2;
             entry->size = file.size;
             break;
         }
@@ -272,7 +272,7 @@ fat_read_file(FILE* disk, Fat_Directory_Entry* file_entry, u8* buffer) {
     do {
         u32 lba = fat_cluster_to_lba(current_cluster);
         ok = ok && read_sectors(disk, lba, boot_sector.sectors_per_cluster, buffer);
-        buffer += boot_sector.bytes_per_sector * boot_sector.sectors_per_cluster;
+        buffer += boot_sector.sectors_per_cluster * boot_sector.bytes_per_sector;
         current_cluster = fat_read_entry(current_cluster);
     } while (ok && current_cluster < 0x0ff8);
     
@@ -301,7 +301,7 @@ main(int argc, char* argv[]) {
     if (strcmp(command, "format") == 0) {
         
         // Load the bootsector and store it in disk memory
-        Read_File_Result bootloader = read_entire_file("bootloader.bin");
+        Read_File_Result bootloader = read_entire_file("boot.bin");
         if (bootloader.size == 0) return 1;
         boot_sector = *((Fat_Boot_Sector*) bootloader.content);
         
@@ -336,14 +336,6 @@ main(int argc, char* argv[]) {
         // Copy file allocation table for data redundancy
         void* fat2 = ((u8*) disk_memory) + (boot_sector.bytes_per_sector * (boot_sector.sectors_per_fat + 1));
         memcpy(fat2, fat, boot_sector.bytes_per_sector * boot_sector.sectors_per_fat);
-        
-        for (int i = 0; i < 10; i++) {
-            printf("%.2x  ", fat[i]);
-        }
-        printf("\n");
-        for (int i = 0; i < 10; i++) {
-            printf("%.3x ", fat_read_entry(i));
-        }
         
         // Write disk memory out to file
         FILE* disk_file = fopen(disk_path, "wb");
@@ -391,7 +383,7 @@ main(int argc, char* argv[]) {
             num_sectors++; // make sure to include partially used sectors
         }
         
-        root_directory_end_lba = lba + num_sectors * boot_sector.bytes_per_sector;
+        root_directory_end_lba = lba + num_sectors;
         root_directory = malloc(num_sectors * boot_sector.bytes_per_sector);
         if (!read_sectors(disk, lba, num_sectors, root_directory)) {
             printf("\nFailed to read the root directory, not valid FAT12 image\n");
