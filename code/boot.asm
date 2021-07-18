@@ -191,7 +191,7 @@ current_cluster:      db 0
 FIRST_CLUSTER_LBA equ 31 ; TODO(alexander): hardcoded for now
 
 ; The location of the kernel in memory
-KERNEL_OFFSET equ 0x1000
+KERNEL_OFFSET equ 0x8000
 
 times 510-($-$$) db 0
 dw 0xaa55
