@@ -1,6 +1,86 @@
-bits 32
+section .loader
+bits 16
+;
+; Starting in 16-bit real mode, the kernel loader is responsible for
+; setting up the CPU to run in 64-bit mode and start the kernel.
+;
 
-main32:
+%define ENDL 0x0D, 0x0A
+
+global loader
+loader:
+    ; enable A20
+    ; TODO(alexander): this is not going to work on all computers
+    in al, 0x92
+    or al, 0x2
+    out 0x92, al
+
+    ; set VGA to be normal mode
+    mov ax, 0x3
+    int 0x10
+
+    cli                ; clear interrupts
+    lgdt [gdt.pointer] ; load global/ interrupt descriptor table register
+
+    ; set protected mode bit
+    mov eax, cr0
+    or eax, 0x1
+    mov cr0, eax
+
+    ; jump to 32-bit protected mode of the kernel
+    jmp gdt.code:loader32
+
+    ; should never be executed
+    jmp halt
+
+;
+; Global Descriptor Table:
+; |31                    24|23                    16|15                     8|7                      0|
+; |------------------------|---|----|---|---|-------|---|-----|---|----------|------------------------|
+; | base address (24-31)   | G | DB | - | A | limit | P | DPL | S | type     | base address (16-23)   |
+; |------------------------|---|----|---|---|-------|---|-----|---|----------|------------------------|
+; | base address (0-15)                             | segment limit (0-15)                            |
+; |-------------------------------------------------|-------------------------------------------------|
+;
+; TODO(alexander): document each of the entries in the descriptor table here
+;
+
+; 32-bit global descriptor table
+gdt:
+.null: equ $ - gdt
+    dq 0x0
+.code: equ $ - gdt
+    dw 0xffff     ; segment limit
+    dw 0x0        ; base address (bit 0-15)
+    db 0x0        ; base address (bit 16-23)
+    db 0b10011010 ; access byte
+    db 0b11001111 ; flags
+    db 0x0        ; base address (bit 25-31)
+.data: equ $ - gdt
+    dw 0xffff     ; segment limit
+    dw 0x0        ; base address (bit 0-15)
+    db 0x0        ; base address (bit 16-23)
+    db 0b10010010 ; access byte
+    db 0b11001111 ; flags
+    db 0x0        ; base address (bit 25-31)
+.pointer:
+    dw $ - gdt - 1
+    dd gdt
+
+bits 32
+;
+; From 32-bit protected mode the CPU needs to setup
+; global descriptor table, CPUID and PAE paging to then
+; run the CPU in long (64-bit) mode.
+;
+
+edit_gdt_to_64_bit:
+    ; modify the access byte to support 64-bit
+    mov [gdt.code + 6], byte 0b10101111
+    mov [gdt.data + 6], byte 0b10101111
+    ret
+
+loader32:
     ; initialize stack and data segment
     mov ax, gdt.data 
     mov ds, ax
@@ -36,11 +116,6 @@ main32:
     jz .no_long_mode
 
 .setup_pae_paging:
-    ; disable old paging
-;    mov eax, cr0
-;    and eax, 01111111111111111111111111111111b
-;    mov cr0, eax
-
     mov edi, 0x1000    ; Set the destination index to 0x1000.
     mov cr3, edi       ; Set control register 3 to the destination index.
     xor eax, eax       ; Nullify the A-register.
@@ -117,7 +192,7 @@ main32:
 
     ; jump to kernel in 64-bit mode
     lgdt [gdt.pointer]
-    jmp gdt.code:main64
+    jmp gdt.code:loader64
 
 .kernel32_success:
     ; kernel was initialized sucessfully
@@ -163,6 +238,50 @@ puts:
     pop esi
     ret
 
+bits 64
+;
+; Now the processor is setup to run in long (64-bit) mode.
+; The task is now to start the actual kernel which lives in C land.
+;
+
+loader64:
+    mov rdi, TEXT_DISPLAY
+    mov rax, 0x1F201F201F201F20
+    mov rcx, 1000
+    cld
+    rep stosd
+    mov esi, msg_kernel_success
+    call puts
+
+    ; run the kernel main function in C
+    mov esp, kernel_stack_top
+    extern main
+    call main
+
+global halt
 halt:
     cli
     hlt
+
+msg_kernel_success:
+    db "Kernel was initialized successfully!", ENDL, 0
+
+msg_no_cpuid:
+    db "No support for CPUID!", ENDL, 0
+
+msg_no_long_mode:
+    db "No support for long (64-bit) mode!", ENDL, 0
+
+TEXT_DISPLAY equ 0xb8000
+buffer_display:
+    dd TEXT_DISPLAY
+
+times 2048-($-$$) db 0 ; end of the kernel loader
+
+; reserve 16K of stack space after the code
+section .bss
+bits 64
+align 8
+kernel_stack_bottom: equ $
+    resb 16384
+kernel_stack_top:
