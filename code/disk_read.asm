@@ -66,7 +66,7 @@ disk_read_error:
 
 
 ;
-; Converts an LBA (Local Block Addressing) ddress to CHS (Cylinder-Head-Sector) address
+; Converts an LBA (Local Block Addressing) address to CHS (Cylinder-Head-Sector) address
 ; Parameters:
 ;     - ax: LBA address
 ; Returns:

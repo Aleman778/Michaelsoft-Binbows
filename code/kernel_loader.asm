@@ -124,6 +124,7 @@ loader32:
     mov dword [edi], 0x4003 ; PT -> 0x4000
     add edi, 0x1000
 
+
     ; NOTE(alexander): the 3 means that page is present and readable
     mov ebx, 0x00000003
     mov ecx, 512
@@ -220,10 +221,51 @@ bits 64
 ; The task is now to start the actual kernel which lives in C land.
 ;
 
+%macro PUSH_ALL_REGS 0
+    push rax
+    push rcx
+    push rdx
+    push r8
+    push r9
+    push r10
+    push r11
+%endmacro
+
+%macro POP_ALL_REGS 0
+    pop rax
+    pop rcx
+    pop rdx
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+%endmacro
+
+extern _idt
+idt_descriptor:
+    dw 4095
+    dq _idt
+
+extern isr1_handler
+isr1:
+    PUSH_ALL_REGS
+    call isr1_handler
+    POP_ALL_REGS
+    iretq
+    GLOBAL isr1
+    
+load_idt:
+    lidt[idt_descriptor]
+    sti
+    ret
+    GLOBAL load_idt
+
+extern main
 loader64:
     mov rdi, TEXT_DISPLAY
     mov rax, 0x1F201F201F201F20
     mov rcx, 1000
+    jmp halt
     cld
     rep stosd
     mov esi, msg_kernel_success
@@ -231,7 +273,6 @@ loader64:
 
     ; run the kernel main function in C
     mov esp, kernel_stack_top
-    extern main
     call main
 
 global halt
