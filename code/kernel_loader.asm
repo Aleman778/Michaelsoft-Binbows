@@ -28,7 +28,6 @@ loader:
     or eax, 0x1
     mov cr0, eax
 
-    xchg bx, bx
     ; jump to 32-bit protected mode of the kernel
     jmp gdt.code:loader32
 
@@ -232,22 +231,23 @@ bits 64
 %endmacro
 
 %macro POP_ALL_REGS 0
-    pop rax
-    pop rcx
-    pop rdx
-    pop r8
-    pop r9
-    pop r10
     pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdx
+    pop rcx
+    pop rax
 %endmacro
 
 extern _idt
 idt_descriptor:
-    dw 4095
+    dw 4095 ; size of the IDT
     dq _idt
 
 extern isr1_handler
 isr1:
+    xchg bx, bx
     PUSH_ALL_REGS
     call isr1_handler
     POP_ALL_REGS
@@ -265,7 +265,6 @@ loader64:
     mov rdi, TEXT_DISPLAY
     mov rax, 0x1F201F201F201F20
     mov rcx, 1000
-    jmp halt
     cld
     rep stosd
     mov esi, msg_kernel_success

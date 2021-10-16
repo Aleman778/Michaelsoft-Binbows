@@ -51,9 +51,11 @@ typedef unsigned long long int u64;
 typedef const char*            cstr; // TODO(alexander): str instead for safety
 typedef char*                  str;
 
+#define true 1
+#define false 0
+
 #define array_count(array) (sizeof(array) / sizeof((array)[0]))
 #define str_count(s) *((u32*) s - 1)
-
 
 // TODO(alexander): intrinsics should be moved into platform specific codebase
 void
@@ -104,10 +106,10 @@ cursor_set_position_xy(u16 x, u16 y) {
 #define puts(message, count) puts_formatted(message, count, VGA_BG_BLACK | VGA_FG_WHITE)
 
 void
-puts_formatted(cstr message, int length, char formatting) {
+puts_formatted(cstr message, int count, char formatting) {
     char* vga = (char*) VGA_TEXT_DISPLAY + global_cursor_position*2;
     char* curr_character = (char*) message;
-    for (u32 i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++) {
         char character = *curr_character++;
         switch (character) {
             case '\0': return;
@@ -182,10 +184,11 @@ extern IDT64 _idt[256];
 // declared in kernel_loader.asm
 extern u64 isr1;
 extern void load_idt();
+extern void halt();
 
 void
 initialize_idt() {
-    for (u64 index = 0; index < 256; index++) {
+    for (u64 index = 0; index < array_count(_idt); index++) {
         _idt[index].zero = 0;
         _idt[index].ist = 0;
         _idt[index].selector = 0x08;
@@ -209,19 +212,13 @@ isr1_handler() {
     outb(0xa0, 0x20);
 }
 
-extern void halt();
-
 int main() {
-    cursor_set_position(10);
-    //initialize_idt();
+    cursor_set_position(0);
+    initialize_idt();
     
     const char formatting = VGA_BG_BLUE | VGA_FG_WHITE;
-    //cstr hello = "Hello Kernel from C\n\r\0";
-    //puts_formatted(hello, cstr_count(hello), color);
-    
-    char* vga = (char*) VGA_TEXT_DISPLAY;
-    *vga++ = 'A';
-    *vga++ = formatting;
+    cstr hello = "Hello Kernel from C\n\r\0";
+    puts_formatted(hello, cstr_count(hello), formatting);
     
     
     //const char* message = "test";
@@ -250,11 +247,13 @@ int main() {
     //}
     //}
     
-    cursor_set_position(global_cursor_position);
+    cursor_set_position(80);
     
     //str s = hex_to_string(0x123456789ABCDEF);
     //puts(s, str_count(s));
     
-    halt();
+    for (;;) {
+    }
+    
     return 0;
 }
