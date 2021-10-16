@@ -204,10 +204,33 @@ initialize_idt() {
     load_idt();
 }
 
+const char ps2_keyboard_scancode_set1[] ={
+    0, 0, '1', '2',
+    '3', '4', '5', '6',
+    '7', '8', '9', '0',
+    '-', '=', 0, 0,
+    'q', 'w', 'e', 'r',
+    't', 'y', 'u', 'i',
+    'o', 'p', '[', ']',
+    0, 0, 'a', 's',
+    'd', 'f', 'g', 'h',
+    'j', 'k', 'l', ';',
+    '\'', '`', 0, '\\',
+    'z', 'x', 'c', 'v',
+    'b', 'n', 'm', ',',
+    '.', '/', 0, '*',
+    0, ' '
+};
+
 void 
 isr1_handler() {
-    str scancode = hex_to_string(inb(0x60));
-    puts(scancode, cstr_count(scancode));
+    u8 scancode = inb(0x60);
+    if (scancode < array_count(ps2_keyboard_scancode_set1)) {
+        char chr = ps2_keyboard_scancode_set1[scancode];
+        const char formatting = VGA_BG_BLUE | VGA_FG_WHITE;
+        puts_formatted(&chr, 1, formatting);
+    }
+    
     outb(0x20, 0x20);
     outb(0xa0, 0x20);
 }
@@ -247,7 +270,7 @@ int main() {
     //}
     //}
     
-    cursor_set_position(80);
+    cursor_set_position(80*2);
     
     //str s = hex_to_string(0x123456789ABCDEF);
     //puts(s, str_count(s));
