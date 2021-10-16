@@ -19,31 +19,21 @@ loader:
     mov ax, 0x3
     int 0x10
 
-    cli                ; clear interrupts
-    lgdt [gdt.pointer] ; load global/ interrupt descriptor table register
+    ; load the global discriptor table
+    cli
+    lgdt [gdt.pointer]
 
     ; set protected mode bit
     mov eax, cr0
     or eax, 0x1
     mov cr0, eax
 
+    xchg bx, bx
     ; jump to 32-bit protected mode of the kernel
     jmp gdt.code:loader32
 
     ; should never be executed
     jmp halt
-
-;
-; Global Descriptor Table:
-; |31                    24|23                    16|15                     8|7                      0|
-; |------------------------|---|----|---|---|-------|---|-----|---|----------|------------------------|
-; | base address (24-31)   | G | DB | - | A | limit | P | DPL | S | type     | base address (16-23)   |
-; |------------------------|---|----|---|---|-------|---|-----|---|----------|------------------------|
-; | base address (0-15)                             | segment limit (0-15)                            |
-; |-------------------------------------------------|-------------------------------------------------|
-;
-; TODO(alexander): document each of the entries in the descriptor table here
-;
 
 ; 32-bit global descriptor table
 gdt:
@@ -67,6 +57,7 @@ gdt:
     dw $ - gdt - 1
     dd gdt
 
+
 bits 32
 ;
 ; From 32-bit protected mode the CPU needs to setup
@@ -76,8 +67,8 @@ bits 32
 
 edit_gdt_to_64_bit:
     ; modify the access byte to support 64-bit
-    mov [gdt.code + 6], byte 0b10101111
-    mov [gdt.data + 6], byte 0b10101111
+    mov [gdt + gdt.code + 6], byte 0b10101111
+    mov [gdt + gdt.data + 6], byte 0b10101111
     ret
 
 loader32:
@@ -116,20 +107,14 @@ loader32:
     jz .no_long_mode
 
 .setup_pae_paging:
-    mov edi, 0x1000    ; Set the destination index to 0x1000.
-    mov cr3, edi       ; Set control register 3 to the destination index.
-    xor eax, eax       ; Nullify the A-register.
-    mov ecx, 4096      ; Set the C-register to 4096.
-    rep stosd          ; Clear the memory.
-    mov edi, cr3       ; Set the destination index to control register 3.
     ; clear PAE paging tables
-;    mov edi, 0x1000 ; PML4T -> 0x1000
-;    mov cr3, edi
-;    xor eax, eax
-;    mov ecx, 4096
-;    std             ; makes sure to decrement ecx
-;    rep stosd
-;    mov edi, cr3
+    mov edi, 0x1000 ; PML4T -> 0x1000
+    mov cr3, edi
+    xor eax, eax
+    mov ecx, 4096
+    std             ; makes sure to decrement ecx
+    rep stosd
+    mov edi, cr3
    
     ; setup page tables
     mov dword [edi], 0x2003 ; PDPT -> 0x2000
@@ -138,42 +123,32 @@ loader32:
     add edi, 0x1000
     mov dword [edi], 0x4003 ; PT -> 0x4000
     add edi, 0x1000
+
     ; NOTE(alexander): the 3 means that page is present and readable
-
-    mov ebx, 0x00000003          ; Set the B-register to 0x00000003.
-    mov ecx, 512                 ; Set the C-register to 512.
- 
-.SetEntry:
-    mov DWORD [edi], ebx         ; Set the uint32_t at the destination index to the B-register.
-    add ebx, 0x1000              ; Add 0x1000 to the B-register.
-    add edi, 8                   ; Add eight to the destination index.
-    loop .SetEntry       
-
-;    mov ebx, 0x00000003
-;    mov ecx, 512
-;.set_page_entry:
-;    mov dword [edi], ebx
-;    add ebx, 0x1000
-;    add edi, 8
-;    loop .set_page_entry
+    mov ebx, 0x00000003
+    mov ecx, 512
+.set_page_entry:
+    mov dword [edi], ebx
+    add ebx, 0x1000
+    add edi, 8
+    loop .set_page_entry
     
     ; enable PAE paging
     mov eax, cr4
     or eax, 1 << 5
     mov cr4, eax
 
+; TODO(alexander): investigate level-5 paging here PML5
 .set_pml5_paging:
     mov eax, 0x7
     xor ecx, ecx
     cpuid
     test ecx, (1<<16)
-    jz .skip_5_level_paging
+    jz .skip_pml5_paging
     mov eax, cr4
     or eax, (1<<12) ;CR4.LA57
     mov cr4, eax
-.skip_5_level_paging:
-    
-; TODO(alexander): investigate level-5 paging here PML5
+.skip_pml5_paging:
 
 .switch_to_long_mode:
     ; set LM-bit
@@ -237,6 +212,7 @@ puts:
     pop ebx
     pop esi
     ret
+
 
 bits 64
 ;

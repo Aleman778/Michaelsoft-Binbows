@@ -2,5 +2,6 @@
 # Build directory
 build/
 
-# Bochs configuration file
+# Bochs files
 *.bxrc
+bx_enh_dbg.ini

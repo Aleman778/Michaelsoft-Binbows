@@ -67,7 +67,7 @@ cursor_set_position_xy(u16 x, u16 y) {
 
 void
 puts(cstr message, int length, char formatting) {
-    char* vga = (char*) (VGA_TEXT_DISPLAY + global_cursor_position*2);
+    char* vga = (char*) VGA_TEXT_DISPLAY + global_cursor_position*2;
     char* curr_character = (char*) message;
     for (int i = 0; i < length; i++) {
         char character = *curr_character++;
