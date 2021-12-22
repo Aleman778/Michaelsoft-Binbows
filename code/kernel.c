@@ -72,6 +72,7 @@ inb(u16 port) {
 
 // TODO(alexander): move into cursor file maybe?
 static u16 global_cursor_position;
+static char global_formatting = VGA_BG_BLACK | VGA_FG_WHITE;
 
 void
 cursor_enable(u8 begin_scanline, u8 end_scanline) {
@@ -103,7 +104,7 @@ cursor_set_position_xy(u16 x, u16 y) {
     cursor_set_position(position);
 }
 
-#define puts(message, count) puts_formatted(message, count, VGA_BG_BLACK | VGA_FG_WHITE)
+#define puts(message, count) puts_formatted(message, count, global_formatting)
 
 void
 puts_formatted(cstr message, int count, char formatting) {
@@ -123,10 +124,6 @@ puts_formatted(cstr message, int count, char formatting) {
             default: {
                 *vga++ = character;
                 *vga++ = formatting;
-                //character = 'A';
-                //*((char*) VGA_TEXT_DISPLAY + i*2) = character;
-                //*((char*) VGA_TEXT_DISPLAY + global_cursor_position*2) = character; // print character
-                //*((char*) VGA_TEXT_DISPLAY + global_cursor_position*2 + 1) = formatting; // text formatting
                 global_cursor_position++;
             }
         }
@@ -135,21 +132,93 @@ puts_formatted(cstr message, int count, char formatting) {
     cursor_set_position(global_cursor_position);
 }
 
+#define putc(c) putc_formatted(c, global_formatting);
+
+void
+putc_formatted(char character, char formatting) {
+    if (character == '\0' || character == '\r') {
+        return;
+    }
+    
+    if (character == '\n') {
+        global_cursor_position += VGA_TEXT_COLUMNS_PER_LINE;
+        global_cursor_position -= global_cursor_position % VGA_TEXT_COLUMNS_PER_LINE;
+    } else {
+        char* vga = (char*) VGA_TEXT_DISPLAY + global_cursor_position*2;
+        *vga++ = character;
+        *vga++ = formatting;
+        global_cursor_position++;
+    }
+}
+
+enum Printf_State {
+    PrintfState_Normal,
+    PrintfState_bit_16,
+    PrintfState_bit_8,
+    PrintfState_bit_64,
+    PrintfState_Long2,
+    PrintfState_,
+};
+
+void
+printf(const char* fmt, ...) {
+    u8* varargs = (u8*) &fmt;
+    
+    s32 state = 0;
+    
+    while (fmt) {
+        char c = *fmt++;
+        if (c == '%') {
+            switch (*fmt) {
+                case '%': {
+                    putc(c);
+                    fmt++;
+                } break;
+                
+                case 'l': {
+                    
+                }
+                
+                case 'i':
+                case 'd': {
+                    s64 value;
+                    value = *((s32*) varargs)++;
+                }
+                format_unsigned_integer(value, 10, hex_to_char_lower);
+            } break;
+            
+            case 'u': {
+                u64 value;
+                if (fmt++ == 'l') {
+                    
+                } else {
+                    value = *((u32*) varargs)++;
+                }
+                
+                format_unsigned_integer(, 10, hex_to_char_lower);
+            } break;
+        } else {
+            putc(c);
+        }
+    }
+}
+
+
 // NOTE(alexander): this is a very hacky implementation
 char hex_to_string_buffer[32];
-str hex_to_string(u64 value) {
+char hex_to_char_lower[] = '0123456789abcdf';
+char hex_to_char_upper[] = '0123456789ABCDF';
+
+str
+format_unsigned_integer(u64 value, u64 radix, char* digit_characters) {
     int buffer_count = 32 - 5; // null chr + u32 size.
     char* buffer = hex_to_string_buffer + 31;
     *buffer-- = '\0';
     u32 count = 0;
     for (int i = 0; i < buffer_count; i++) {
-        char digit = (char) (value % 16);
-        value /= 16;
-        if (digit < 10) {
-            *buffer-- = digit + '0';
-        } else if (digit < 16)  {
-            *buffer-- = (digit - 10) + 'A';
-        }
+        u64 digit = value % radix;
+        value /= radix;
+        *buffer-- = digit_characters[digit];
         count++;
         
         if (value == 0) {
@@ -235,40 +304,19 @@ isr1_handler() {
     outb(0xa0, 0x20);
 }
 
+
+void* 
+read_sectors()
+
 int main() {
     cursor_set_position(0);
     initialize_idt();
     
     const char formatting = VGA_BG_BLUE | VGA_FG_WHITE;
-    cstr hello = "Hello Kernel from C\n\r\0";
+    cstr hello = "Hello Kernel from C\n\r";
     puts_formatted(hello, cstr_count(hello), formatting);
     
     
-    //const char* message = "test";
-    //u32 count = 4;
-    //char* vga = (char*) VGA_TEXT_DISPLAY;
-    //char* curr_character = (char*) message;
-    //for (u32 i = 0; i < count; i++) {
-    //char character = *curr_character++;
-    //switch (character) {
-    //case '\r': continue;
-    //
-    //case '\n': {
-    //global_cursor_position += VGA_TEXT_COLUMNS_PER_LINE;
-    //global_cursor_position -= global_cursor_position % VGA_TEXT_COLUMNS_PER_LINE;
-    //} break;
-    //
-    //default: {
-    //*vga++ = character;
-    //*vga++ = formatting;
-    //character = 'A';
-    //*((char*) VGA_TEXT_DISPLAY + i*2) = character;
-    //*((char*) VGA_TEXT_DISPLAY + global_cursor_position*2) = character; // print character
-    //*((char*) VGA_TEXT_DISPLAY + global_cursor_position*2 + 1) = formatting; // text formatting
-    //global_cursor_position++;
-    //} break;
-    //}
-    //}
     
     cursor_set_position(80*2);
     
