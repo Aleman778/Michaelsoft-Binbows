@@ -16,8 +16,7 @@ cl -nologo -Zi -FC ../tools/fat12.c -link -incremental:no -opt:ref
 
 echo Building the kernel
 
-wsl $WSLENV/x86_64-elf-gcc ../code/kernel.c kernel_loader.o -o kernel.bin -ffreestanding -mno-red-zone -fno-exceptions -nostdlib -Wall -Wextra -Werror -T ../code/kernel_linker.ld
-%rem clang -target x86_64-pc-none-elf ../code/kernel.c kernel_loader.o -o kernel.bin -ffreestanding -mno-red-zone -fno-exceptions -nostdlib -Wall -Wextra -Werror -T ../code/kernel_linker.ld
+wsl $WSLENV/x86_64-elf-gcc ../code/kernel/kernel.c kernel_loader.o -o kernel.bin -ffreestanding -mno-red-zone -fno-exceptions -nostdlib -Wall -Wextra -Werror -T ../code/kernel_linker.ld
 
 echo Formatting the floppy image
 fat12 format
