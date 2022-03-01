@@ -1,3 +1,4 @@
+; NOTE: this is running 16-bit real mode
 
 ;
 ; Read sectors from disk

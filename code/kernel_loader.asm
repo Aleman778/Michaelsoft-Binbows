@@ -247,7 +247,6 @@ idt_descriptor:
 
 extern isr1_handler
 isr1:
-    xchg bx, bx
     PUSH_ALL_REGS
     call isr1_handler
     POP_ALL_REGS

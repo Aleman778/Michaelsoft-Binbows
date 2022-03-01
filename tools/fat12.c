@@ -2,15 +2,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
+#include <stdbool.h>
 
 // FAT12 filesystem
 // https://wiki.osdev.org/FAT12
 // NOTE(alexander): this is not meant to be a feature complete FAT system,
 //                  right now the goal is to find the kernel binary.
-
-typedef uint8_t bool;
-#define true 1
-#define false 0
 
 // NOTE(alexander): define more convinient types
 typedef unsigned int uint;

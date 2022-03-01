@@ -1,6 +1,5 @@
 
 #include "kernel.h"
-#include <stdarg.h>
 
 
 // TODO(alexander): intrinsics should be moved into platform specific codebase
@@ -15,6 +14,35 @@ inb(u16 port) {
     asm volatile ("inb %1, %0" : "=a"(result) : "Nd"(port));
     return result;
 }
+
+void
+out(u16 port, u16 value) {
+    asm volatile ("out %0, %1" : : "a"(value), "Nd"(port));
+}
+
+u16
+in(u16 port) {
+    u8 result;
+    asm volatile ("in %1, %0" : "=a"(result) : "Nd"(port));
+    return result;
+}
+
+void
+rep_insw(u16 port, u16* dest, u32 count) {
+    asm volatile ("rep insw" : 
+                  "+D"(dest), "+c"(count), "=m"(*dest) :
+                  "d"(port));
+}
+
+
+
+void
+debug_break() {
+    asm volatile ("xchg %bx, %bx");
+}
+
+#include "ata_io.c"
+
 
 // TODO(alexander): move into cursor file maybe?
 static u16 global_cursor_position;
@@ -111,8 +139,8 @@ to_uppercase_char(char c) {
 }
 
 char hex_to_string_buffer[32];
-char hex_to_char_lower[] = "0123456789abcdf";
-char hex_to_char_upper[] = "0123456789ABCDF";
+char hex_to_char_lower[] = "0123456789abcdef";
+char hex_to_char_upper[] = "0123456789ABCDEF";
 
 // TODO(alexander): this is a very hacky implementation
 string
@@ -404,6 +432,8 @@ isr1_handler() {
     outb(0xa0, 0x20);
 }
 
+extern void ata_lba_read(u32 lba, void* out_buffer);
+
 int 
 main() {
     cursor_set_position(0);
@@ -419,6 +449,18 @@ main() {
     printf("Decimals: %d %ld\n", 1977, 650000L);
     printf("Some different radices: %d %x 0x%x \n", 100, 100, 100);
     
+    // Read from disk
+    bool success = ata_initialize(true);
+    if (success) {
+        printf("ATA device was not found");
+    }
+    
+    u8 buffer[512]; // sector size
+    ata_read_sectors(0, 1, buffer);
+    
+    for (int i = 0; i < 512; i++) {
+        printf("%hhx ", buffer[i]);
+    }
     
     //cursor_set_position(80*2);
     

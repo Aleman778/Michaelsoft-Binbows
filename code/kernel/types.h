@@ -1,4 +1,7 @@
 
+#include <stdarg.h>
+#include <stdbool.h>
+
 // Basic types
 #ifndef SMM_TYPE
 #define SMM_TYPE s64
@@ -15,6 +18,7 @@ typedef signed   short         s16;
 typedef signed   int           s32;
 typedef signed   long long int s64;
 typedef SMM_TYPE               smm;
+typedef s32                    b32;
 typedef unsigned char          u8;
 typedef unsigned short         u16;
 typedef unsigned int           u32;
@@ -33,12 +37,6 @@ typedef struct {
     umm count;
     u8* data;
 } string;
-
-// Boolean
-typedef u8  bool;
-typedef s32 b32;
-#define true 1
-#define false 0
 
 // Renaem static
 #define internal static
