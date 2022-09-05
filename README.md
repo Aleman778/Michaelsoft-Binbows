@@ -2,6 +2,10 @@
 The new amazing operating system!
 ![binbows](https://raw.githubusercontent.com/Aleman778/Michaelsoft-Binbows/main/banner.jpg)
 
+## Progress
+This is very early in development, so far I have implemented a boot loader, FAT12 file system formatter, ps2 keyboard driver, 64-bit mode kernel loader and simple printf.
+![printf in action](https://raw.githubusercontent.com/Aleman778/Michaelsoft-Binbows/main/kernel_printf.png)
+
 ## Setup Windows
 Prerequsites:
 1. Download Netwide Assembler https://nasm.us, make sure this is on your path
