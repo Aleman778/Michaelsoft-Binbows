@@ -1,7 +1,5 @@
 # Michaelsoft-Binbows
 The new amazing operating system!
-![binbows](https://raw.githubusercontent.com/Aleman778/Michaelsoft-Binbows/main/banner.jpg)
-
 ## Progress
 This is very early in development, so far I have implemented a boot loader, FAT12 file system formatter, ps2 keyboard driver, 64-bit mode kernel loader and simple printf.
 ![printf in action](https://raw.githubusercontent.com/Aleman778/Michaelsoft-Binbows/main/kernel_printf.png)
@@ -32,3 +30,6 @@ Now you can `Run` the program and it can also be executed directly via that file
 Using 4coder there is a project file which allows you to load the files
 and build the project. `F1` is configured to build the project and
 `F2` runs the `build\\bochsrc.bxrc`.
+
+![binbows](https://raw.githubusercontent.com/Aleman778/Michaelsoft-Binbows/main/banner.jpg)
+The name is just a joke, don't sue me.
